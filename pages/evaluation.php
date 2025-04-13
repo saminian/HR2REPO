@@ -8,10 +8,16 @@ $homeContent = "
             <h2 class='text-xl font-bold mb-4 bg-white rounded-xl pt-2 pb-2 indent-4'>Employee Evaluation</h2>
 
              <div class='container mx-auto bg-white h-[70%] mt-5 rounded-xl p-4 shadow-lg'>
-                <div class='flex justify-between items-center mb-4'>
-            <button onclick='openModal()' class='bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600'>
-                Evaluate Employee
-            </button>
+               <div class='flex justify-between items-center mb-4'>
+    <div>
+        <button onclick='openModal()' class='bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600'>
+            Evaluate Employee
+        </button>
+        <button onclick='printPDF()' class='bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 ml-2'>
+            Print PDF
+        </button>
+    </div>
+
         </div>
 
         <table class='w-full border-collapse  bg-white'>
@@ -536,4 +542,62 @@ hrLayout($homeContent);
     function closeModal() {
         document.getElementById('employeeModal').classList.add('hidden');
     }
+</script>
+<!-- Add this to your head section or before your script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script>
+    // Initialize jsPDF
+    const { jsPDF } = window.jspdf;
+    const table = document.getElementById('employeeTable');
+    const rows = table.querySelectorAll('tr');
+    async function printPDF() {
+    try {
+        // 1. Fetch data directly from your API (adjust the URL)
+        const response = await fetch('http://localhost/HR2REPO/api/employeeEvaluation.php');
+        const employees = await response.json();
+
+        // 2. Prepare PDF data
+        const pdfData = [['ID', 'Name', 'Status']]; // Headers
+        
+        employees.forEach(employee => {
+            // Use database fields (e.g., employee.final_score) to determine status
+            const status = employee.final_score >= 75 ? 'Pass' : 'Fail';
+            pdfData.push([
+                employee.id,
+                `${employee.first_name} ${employee.last_name}`,
+                status
+            ]);
+        });
+
+        // 3. Generate PDF (same as before)
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text('Employee Evaluation Report', 105, 15, { align: 'center' });
+        
+        const today = new Date();
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${today.toLocaleDateString()}`, 105, 22, { align: 'center' });
+
+        doc.autoTable({
+            head: [pdfData[0]],
+            body: pdfData.slice(1),
+            startY: 30,
+            headStyles: { 
+                fillColor: [245, 158, 11], // Amber
+                textColor: [255, 255, 255] 
+            },
+            columnStyles: {
+                0: { cellWidth: 17 },  // ID
+                2: { cellWidth: 24 }   // Status
+            }
+        });
+
+        doc.save(`Employee_Report_${today.toISOString().split('T')[0]}.pdf`);
+
+    } catch (error) {
+        console.error("PDF generation failed:", error);
+        alert("Error: Could not fetch data from the database.");
+    }
+}
 </script>

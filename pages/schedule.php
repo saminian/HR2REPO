@@ -10,9 +10,12 @@ $homeContent = "
 
             <div class='container mx-auto bg-white h-[70%] mt-5 rounded-xl p-4 shadow-lg'>
                 <div class='flex justify-between items-center mb-4'>
-                    <input type='text' id='searchTrainee' placeholder='Search...' class='p-1 border border-gray-300 rounded w-1/3'>
-                    <button id='addNewTraineeBtn' class='px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition'>
+                    <input type='text' id='searchTrainee' placeholder='Search...' class=' p-1 border border-gray-300 rounded w-1/3'>
+                    <button id='addNewTraineeBtn' class='px-4 py-2 bg-amber-500  text-white rounded hover:bg-amber-600 transition '>
                      Add New Trainee
+                    </button>
+                    <button id='printPdfBtn' class='px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition ml-2'>
+                    Print PDF
                     </button>
                 </div>
 
@@ -475,4 +478,73 @@ document.addEventListener('DOMContentLoaded', function() {
         }).showToast();
     }
 });
+
+// Add this after your other DOM element declarations
+const printPdfBtn = document.getElementById('printPdfBtn');
+
+// Add this event listener with your other event listeners
+printPdfBtn.addEventListener('click', printTableAsPDF);
+
+// Add this function with your other functions
+function printTableAsPDF() {
+    // Use the jsPDF library
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Get table data
+    const headers = [
+        "Full Name", 
+        "Email", 
+        "Department", 
+        "Workshop"
+    ];
+    
+    const rows = [];
+    const tableRows = document.querySelectorAll('#traineeTableBody tr');
+    
+    tableRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        // Skip the actions column (last column)
+        const rowData = [
+            cells[0].textContent,
+            cells[1].textContent,
+            cells[2].textContent,
+            cells[3].textContent
+        ];
+        rows.push(rowData);
+    });
+    
+    // Add title and date
+    doc.setFontSize(18);
+    doc.text('Trainees List', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+    
+    // Create the table
+    doc.autoTable({
+        head: [headers],
+        body: rows,
+        startY: 25,
+        styles: {
+            cellPadding: 2,
+            fontSize: 9,
+            valign: 'middle',
+            halign: 'left'
+        },
+        headStyles: {
+            fillColor: [245, 158, 11], // Amber-500 color
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [245, 245, 245]
+        },
+        margin: { top: 25 }
+    });
+    
+    // Save the PDF
+    doc.save('trainees-list.pdf');
+}
 </script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js'></script>
